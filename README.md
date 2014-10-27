@@ -8,12 +8,11 @@ Python library for few-body numerical integrations, with a small NAIF CSPICE wra
 * Python2 2.7 or greater, or Python3 3.4 or greater
 * Numpy
 * GCC 3.4 or greater (needs C++11 support)
-* NAIF CSPICE N0065 or greater, installed such that cspice/SpiceUsr.h is in the include path and -lcspice works (see below)
+* NAIF CSPICE N0065 or greater; see below
 
-### Installing CSPICE globally 
+### Download CSPICE 
 
 To avoid having to edit the setup.py file:
 
-1. [Obtain CSPICE from the NAIF website](http://naif.jpl.nasa.gov/naif/toolkit_C.html)
-2. Copy "cspice/include/SpiceUsr.h" to "/usr/include/cspice/SpiceUsr.h"
-3. Copy "cspice/lib/cspice.a" to "/usr/lib/libcspice.a"
+1. Download the appropriate version of CSPICE [from the NAIF website](http://naif.jpl.nasa.gov/naif/toolkit_C.html) into the PyNBody directory
+2. Extract the tarball: `tar xzvf cspice.tar.Z`
