@@ -1,11 +1,11 @@
-# distutils: libraries = cspice
+# distutils: extra_link_args = cspice/lib/cspice.a
 
 # Import numpy 
 cimport numpy as np
 import numpy as np
 
 # Import NAIF SPICE functions
-cdef extern from "cspice/SpiceUsr.h":
+cdef extern from "cspice/include/SpiceUsr.h":
     void furnsh_c(char *)
     void unload_c(char *)
     void kclear_c()
