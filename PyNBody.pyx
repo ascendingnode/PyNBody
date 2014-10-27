@@ -3,9 +3,6 @@
 
 # Numpy and math
 import numpy as np
-#cimport numpy as np
-import math
-import scipy.optimize as opt
 
 # C++ Standard Library vector class
 from libcpp.vector cimport vector
@@ -126,9 +123,11 @@ cdef class NBody:
         o.thisptr[0] = self.thisptr.orbit(i,j)
         return o
 
+    # Lookup the index of an object given a name
     def lookup(self, string s):
         return self.thisptr.lookup(s)
 
+    # Calculate the barycenter of an object
     def calc_bary(self):
         cdef double ub = 0
         cdef vector[double] rb,vb
@@ -136,15 +135,19 @@ cdef class NBody:
         self.thisptr.calc_bary(ub,rb,vb)
         return ub,np.array(rb),np.array(vb)
 
+    # Return the GM of an object
     def u(self, i):
         return self.thisptr.u[i]
 
+    # Set the GM of an object
     def set_u(self, i,double u):
         self.thisptr.u[i] = u
 
+    # Get the name of an index
     def name(self, i):
         return self.thisptr.name[i]
 
+    # Set the maximum allowed eccentricity
     def set_maxe(self, i,e):
         self.thisptr.maxe[i] = e
 
@@ -182,9 +185,6 @@ cdef class NBody:
     # Evolve system
     def evolve(self, double tgoal):
         self.thisptr.evolve_self(tgoal)
-        #cdef _NBody nb = self.thisptr[0]
-        #rkn_evolve(nb,tgoal)
-        #self.thisptr[0] = nb
 
     # Move the barycenter to the center
     def move2bary(self):

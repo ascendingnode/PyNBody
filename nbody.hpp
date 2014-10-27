@@ -8,21 +8,18 @@
 class NBody { public:
 
     double T, maxdist, mindist;
-    unsigned nobj; //, iob;
+    unsigned nobj;
     int failed;
     std::vector<double> r,v,a, u,R,maxe;
     std::vector<std::string> name;
 
     bool verbose;
-    //Orbit helio_orb;
-    //bool oblate, helio;
 
     NBody() {
         T = 0.;
         nobj = 0;
         failed = 0;
         verbose = false;
-        //helio = false;
         maxdist = 0;
         mindist = -1;
     }
@@ -42,10 +39,6 @@ class NBody { public:
         for(int i=0;i<3;i++) { r0[i]=s0[i]; v0[i]=s0[i+3]; }
         return add_object(name0,u0,R0,r0,v0);
     }
-
-    /*void set_helio(const Orbit &orb) {
-        helio = true; helio_orb = orb;
-    }*/
 
     int lookup(const std::string &name0) const {
         for(unsigned i=0;i<nobj;i++) {
@@ -102,19 +95,9 @@ class NBody { public:
         }
     }
 
-    /*void helio_gravity(const double &t, const vector<double> &rr, vector<double> &aa) const {
-        Vector3d rh,vh; helio_orb.rv(t,rh,vh);
-        double rhm = rh.norm(), hg = -helio_orb.u/(rhm*rhm*rhm);
-        for(unsigned j=0;j<nobj;j++) {
-            for(unsigned k=0;k<3;k++) 
-                aa[3*j+k] -= hg*rh[k];
-        }
-    }*/
-
     void dt(const double &t, const std::vector<double> &rr, std::vector<double> &aa) const {
         for(unsigned i=0;i<nobj*3;i++) aa[i] = 0.0;
         first_gravity(rr,aa);
-        //if(helio) helio_gravity(t,rr,aa);
     }
 
     void calc_bary(double &ub,std::vector<double> &rb,std::vector<double> &vb) const {
@@ -208,11 +191,5 @@ class NBody { public:
     }
 
 };
-
-void rkn_evolve(NBody &nb,double tgoal) {
-    RKN670<double,NBody> rkn(nb.nobj*3,1e-12);
-    rkn.integrate(nb,tgoal);
-    nb.failed = rkn.failed;
-}
 
 #endif
