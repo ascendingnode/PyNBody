@@ -185,7 +185,7 @@ cdef class NBody:
     # Evolve system
     def evolve(self, double tgoal, precision=None):
         if precision==None: 
-            self.thisptr.evolve_self(tgoal,1e12)
+            self.thisptr.evolve_self(tgoal,1e-12)
         else:
             self.thisptr.evolve_self(tgoal,float(precision))
 
