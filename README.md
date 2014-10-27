@@ -16,3 +16,13 @@ To avoid having to edit the setup.py file:
 
 1. Download the appropriate version of CSPICE [from the NAIF website](http://naif.jpl.nasa.gov/naif/toolkit_C.html) into the PyNBody directory
 2. Extract the tarball: `tar xzvf cspice.tar.Z`
+
+## Installation
+
+To build and install locally:
+
+python setup.py build_ext install --user
+
+To build and install globally:
+
+sudo python setup.py build_ext install
