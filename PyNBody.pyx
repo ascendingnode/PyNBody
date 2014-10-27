@@ -87,7 +87,7 @@ cdef extern from "nbody.hpp":
         int lookup(string)
         void calc_bary(double &,vector[double] &,vector[double] &)
         _Conic orbit(int,int)
-        void evolve_self(double)
+        void evolve_self(double,double)
         void move2bary()
     void rkn_evolve(_NBody &,double)
 
@@ -183,8 +183,11 @@ cdef class NBody:
         return nbs
 
     # Evolve system
-    def evolve(self, double tgoal):
-        self.thisptr.evolve_self(tgoal)
+    def evolve(self, double tgoal, precision=None):
+        if precision==None: 
+            self.thisptr.evolve_self(tgoal,1e12)
+        else:
+            self.thisptr.evolve_self(tgoal,float(precision))
 
     # Move the barycenter to the center
     def move2bary(self):

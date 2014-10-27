@@ -184,8 +184,8 @@ class NBody { public:
         return true;
     }
 
-    void evolve_self(double tgoal) {
-        RKN670<double,NBody> rkn(nobj*3,1e-12);
+    void evolve_self(double tgoal,double precision=1e-12) {
+        RKN670<double,NBody> rkn(nobj*3,precision);
         rkn.integrate(*this,tgoal);
         failed = rkn.failed;
     }
