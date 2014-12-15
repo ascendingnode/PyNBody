@@ -3,5 +3,5 @@ from Cython.Build import cythonize
 
 setup(
         name = "PyNBody",
-        ext_modules = cythonize(('PyNBody.pyx','SimSpice.pyx')),
+        ext_modules = cythonize(('PyNBody.pyx'))
         )

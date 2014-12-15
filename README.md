@@ -1,34 +1,26 @@
 PyNBody
 =======
 
-Python library for few-body numerical integrations, with a small NAIF CSPICE wrapper
+Python library for few-body numerical integrations
 
-The integrator is based on [ACM Algorithm 670 by Brankin, Gladwell, Dormand, Prince, and Seward](http://dl.acm.org/citation.cfm?id=69650), converted from FORTAN 77 to C++11.
+The integrator is based on [ACM Algorithm 670 by Brankin, Gladwell, Dormand, Prince, and Seward](http://dl.acm.org/citation.cfm?id=69650), converted from FORTAN 77 to C++.
 
 ## Requirements
 
 * Python2 2.7 or greater, or Python3 3.4 or greater
 * Numpy
-* GCC 3.4 or greater (needs C++11 support)
-* NAIF CSPICE N0065 or greater; see below
-
-### Download CSPICE 
-
-To avoid having to edit the setup.py file:
-
-1. Download the appropriate version of CSPICE [from the NAIF website](http://naif.jpl.nasa.gov/naif/toolkit_C.html) into the PyNBody directory
-2. Extract the tarball: `tar xzvf cspice.tar.Z`
+* Cython 0.17 or greater
 
 ## Installation
 
 To build and install locally:
 
-```
+```bash
 python setup.py build_ext install --user
 ```
 
 To build and install globally:
 
-```
+```bash
 sudo python setup.py build_ext install
 ```

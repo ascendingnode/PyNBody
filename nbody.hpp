@@ -1,43 +1,60 @@
-#ifndef __ORBIT_HPP__
-#define __ORBIT_HPP__
+#ifndef __NBODY_HPP__
+#define __NBODY_HPP__
 
+#include "rknint.hpp"
 #include <iostream>
-#include "conic.hpp"
-#include "rkn670_4.hpp"
 
 class NBody { public:
 
-    double T, maxdist, mindist;
-    unsigned nobj;
-    int failed;
-    std::vector<double> r,v,a, u,R,maxe;
+    unsigned neq, nobj;
+    double t, maxdist;
+    std::vector<double> r,v,a, u,R;
     std::vector<std::string> name;
 
-    bool verbose;
+    bool oblate,verbose;
+    unsigned iob;
+    double J2,J4, ra,dec,et_pole;
+    std::vector<double> Cx,Cy,Cz;
 
     NBody() {
-        T = 0.;
-        nobj = 0;
-        failed = 0;
-        verbose = false;
-        maxdist = 0;
-        mindist = -1;
+        nobj = neq = 0;
+        t = maxdist = 0.0;
+        verbose = oblate = false;
     }
 
     unsigned add_object(const std::string &name0,double u0,double R0,const std::vector<double> &r0,const std::vector<double> &v0) {
         name.push_back(name0);
-        u.push_back(u0); R.push_back(R0); maxe.push_back(1);
-        for(unsigned i=0;i<3;i++) {
-            r.push_back(r0[i]); v.push_back(v0[i]); a.push_back(0.);
+        u.push_back(u0); R.push_back(R0);
+        for(int i=0;i<3;i++) {
+            r.push_back(r0[i]);
+            v.push_back(v0[i]);
         }
-        nobj++;
+        nobj++; neq+=3;
         return nobj-1;
     }
 
     unsigned add_object_state(const std::string &name0,double u0,double R0,const std::vector<double> &s0) {
-        std::vector<double> r0(3),v0(3);
-        for(int i=0;i<3;i++) { r0[i]=s0[i]; v0[i]=s0[i+3]; }
-        return add_object(name0,u0,R0,r0,v0);
+        name.push_back(name0);
+        u.push_back(u0); R.push_back(R0);
+        for(int i=0;i<3;i++) {
+            r.push_back(s0[i  ]);
+            v.push_back(s0[i+3]);
+        }
+        nobj++; neq+=3;
+        return nobj-1;
+    }
+
+    void set_oblate(const std::string &name0,double J20,double J40,double ra0,double dec0) {
+        oblate = true;
+        iob = lookup(name0);
+        J2 = J20; J4 = J40; ra = ra0; dec = dec0;
+        const double d2r = M_PI/180.;
+        double sr,cr; sincos(ra *d2r,&sr,&cr);
+        double sd,cd; sincos(dec*d2r,&sd,&cd);
+        Cx.resize(3); Cy.resize(3); Cz.resize(3);
+        Cx[0]=-sr   ; Cx[1]= cr   ; Cx[2]=0.;
+        Cy[0]=-cr*sd; Cy[1]=-sr*sd; Cy[2]=cd;
+        Cz[0]= cr*cd; Cz[1]= sr*cd; Cz[2]=sd;
     }
 
     int lookup(const std::string &name0) const {
@@ -47,147 +64,183 @@ class NBody { public:
         return -1;
     }
 
-    std::vector<double> get_position(unsigned i) const {
-        return {r[3*i],r[3*i+1],r[3*i+2]};
+    void dt(double tt,const std::vector<double> &rr,std::vector<double> &aa) const {
+        aa = std::vector<double>(neq,0.0);
+        particle_grav(tt,rr,aa);
+        if(oblate) oblate_grav(tt,rr,aa);
     }
 
-    std::vector<double> get_velocity(unsigned i) const {
-        return {v[3*i],v[3*i+1],v[3*i+2]};
-    }
-
-    std::vector<double> get_state(unsigned i) const {
-        return {r[3*i],r[3*i+1],r[3*i+2],v[3*i],v[3*i+1],v[3*i+2]};
-    }
-    
-    Conic orbit(unsigned i,int j) const {
-        double ut; std::vector<double> rj,vj;
-        if(j<0) calc_bary(ut,rj,vj);
-        else {
-            ut=u[j]+u[i];
-            rj = get_position(j);
-            vj = get_velocity(j);
-        }
-        auto ri = vec_math::sub(get_position(i),rj);
-        auto vi = vec_math::sub(get_velocity(i),vj);
-        return Conic(T,ut,ri,vi);
-    }
-
-    void first_gravity(const std::vector<double> &rr, std::vector<double> &aa) const {
-        for(unsigned i=0;i<nobj;i++) {
+    void particle_grav(double tt,const std::vector<double> &rr,std::vector<double> &aa) const {
+        for(unsigned i=0;i<nobj-1;i++) {
             for(unsigned j=i+1;j<nobj;j++) {
+                if(u[i]+u[j]==0.) continue;
                 const unsigned i2=i*3, j2=j*3;
                 const double dx = rr[i2  ]-rr[j2  ];
                 const double dy = rr[i2+1]-rr[j2+1];
                 const double dz = rr[i2+2]-rr[j2+2];
-                const double dr = sqrt(dx*dx + dy*dy + dz*dz);
-                const double dr3 = dr*dr*dr;
+                const double dr2 = dx*dx + dy*dy + dz*dz;
+                const double dr3 = dr2*sqrt(dr2);
                 if (u[i]>0.) {
-                    aa[j2  ] += u[i]*dx/dr3;
-                    aa[j2+1] += u[i]*dy/dr3;
-                    aa[j2+2] += u[i]*dz/dr3;
+                    aa[j2  ] += (u[i]*dx)/dr3;
+                    aa[j2+1] += (u[i]*dy)/dr3;
+                    aa[j2+2] += (u[i]*dz)/dr3;
                 }
                 if (u[j]>0.) {
-                    aa[i2  ] -= u[j]*dx/dr3;
-                    aa[i2+1] -= u[j]*dy/dr3;
-                    aa[i2+2] -= u[j]*dz/dr3;
+                    aa[i2  ] -= (u[j]*dx)/dr3;
+                    aa[i2+1] -= (u[j]*dy)/dr3;
+                    aa[i2+2] -= (u[j]*dz)/dr3;
                 }
             }
         }
     }
 
-    void dt(const double &t, const std::vector<double> &rr, std::vector<double> &aa) const {
-        for(unsigned i=0;i<nobj*3;i++) aa[i] = 0.0;
-        first_gravity(rr,aa);
+    void oblate_grav(double tt,const std::vector<double> &rr,std::vector<double> &aa) const {
+        const static double k2 = -1.5*J2*R[iob]*R[iob];
+        const static double k4 = -0.625*J4*R[iob]*R[iob]*R[iob]*R[iob];
+        for(unsigned i=0;i<nobj;i++) {
+            if(i==iob) continue;
+            const double dx = rr[3*i  ]-rr[3*iob  ];
+            const double dy = rr[3*i+1]-rr[3*iob+1];
+            const double dz = rr[3*i+2]-rr[3*iob+2];
+            const double x = Cx[0]*dx + Cx[1]*dy + Cx[2]*dz;
+            const double y = Cy[0]*dx + Cy[1]*dy + Cy[2]*dz;
+            const double z = Cz[0]*dx + Cz[1]*dy + Cz[2]*dz;
+            const double r2 = x*x + y*y + z*z;
+            const double r3 = r2*sqrt(r2), r4 = r2*r2;
+            const double z2r2 = (z*z)/r2, z4r4 = z2r2*z2r2;
+            const double J2tx = k2*(5.*z2r2 - 1.)/r2;
+            const double J2tz = k2*(5.*z2r2 - 3.)/r2;
+            const double J4tx = k4*(63.*z4r4 - 42.*z2r2 +  3.)/r4;
+            const double J4tz = k4*(63.*z4r4 - 70.*z2r2 + 15.)/r4;
+            const double GEx = (J2tx+J4tx)*(x/r3);
+            const double GEy = (J2tx+J4tx)*(y/r3);
+            const double GEz = (J2tz+J4tz)*(z/r3);
+            const double Gx = Cx[0]*GEx + Cy[0]*GEy + Cz[0]*GEz;
+            const double Gy = Cx[1]*GEx + Cy[1]*GEy + Cz[1]*GEz;
+            const double Gz = Cx[2]*GEx + Cy[2]*GEy + Cz[2]*GEz;
+            aa[3*i  ] -= u[iob]*Gx;
+            aa[3*i+1] -= u[iob]*Gy;
+            aa[3*i+2] -= u[iob]*Gz;
+            if(u[i] > 0) {
+                aa[3*iob  ] += u[i]*Gx;
+                aa[3*iob+1] += u[i]*Gy;
+                aa[3*iob+2] += u[i]*Gz;
+            }
+        }
+    }
+
+    std::vector<double> get_position(unsigned i) const {
+        std::vector<double> ret(3,0.0);
+        if(i<nobj) {
+            ret[0]=r[3*i]; ret[1]=r[3*i+1]; ret[2]=r[3*i+2]; }
+        return ret;
+    }
+
+    std::vector<double> get_velocity(unsigned i) const {
+        std::vector<double> ret(3,0.0);
+        if(i<nobj) {
+            ret[0]=v[3*i]; ret[1]=v[3*i+1]; ret[2]=v[3*i+2]; }
+        return ret;
+    }
+
+    std::vector<double> get_state(unsigned i) const {
+        std::vector<double> ret(6,0.0);
+        if(i<nobj) {
+            ret[0]=r[3*i  ]; ret[1]=r[3*i+1]; ret[2]=r[3*i+2]; 
+            ret[3]=v[3*i  ]; ret[4]=v[3*i+1]; ret[5]=v[3*i+2];
+        }
+        return ret;
     }
 
     void calc_bary(double &ub,std::vector<double> &rb,std::vector<double> &vb) const {
-        using namespace vec_math;
-        ub = 0; rb = {0,0,0}; vb = {0,0,0};
+        ub = 0; rb = std::vector<double>(3,0.0); vb = std::vector<double>(3,0.0);
         for(unsigned i=0;i<nobj;i++) {
             ub += u[i];
-            rb = add(rb, mult(u[i],get_position(i)) );
-            vb = add(vb, mult(u[i],get_velocity(i)) );
+            for(int j=0;j<3;j++) {
+                rb[j] += r[3*i+j]*u[i];
+                vb[j] += v[3*i+j]*u[i];
+            }
         }
-        rb = div(rb,ub);
-        vb = div(vb,ub);
+        for(int j=0;j<3;j++) {
+            rb[j] /= ub;
+            vb[j] /= ub;
+        }
     }
 
     void move2bary() {
         double ub; std::vector<double> rb,vb;
         calc_bary(ub,rb,vb);
         for(unsigned i=0;i<nobj;i++) {
-            for(unsigned j=0;j<3;j++) {
+            for(int j=0;j<3;j++) {
                 r[3*i+j] -= rb[j];
                 v[3*i+j] -= vb[j];
             }
         }
     }
 
-    void print_state() const {
-        std::cout.precision(15);
-        std::cout<<"T = "<<std::scientific<<T<<'\n';
+    std::vector<double> momentum() const {
+        std::vector<double> L(3,0.0);
         for(unsigned i=0;i<nobj;i++)
-            printf("%-10s %.15e %.8e %+.15e %+.15e %+.15e %+.15e %+.15e %+.15e\n",
-                    name[i].c_str(),u[i],R[i],
-                    r[3*i],r[3*i+1],r[3*i+2],v[3*i],v[3*i+1],v[3*i+2]);
+            for(int j=0;j<3;j++) 
+                L[j] += u[i]*v[3*i+j];
+        return L;
     }
 
-    void calc_dist(double &md,unsigned &id) const {
-        double d; md = 0.; id = 0;
-        for(unsigned i=0;i<nobj;i++) {
-            d = vec_math::norm(get_position(i));
-            if(d>md) { md=d; id=i; }
-        }
+    double hamiltonian() const {
+        double T = 0.0, V = 0.0;
+        for(unsigned i=0;i<nobj;i++) 
+            T += 0.5*u[i]*( v[3*i]*v[3*i] + v[3*i+1]*v[3*i+1] + v[3*i+2]*v[3*i+2] );
+        for(unsigned i=0;i<nobj-1;i++) 
+            for(unsigned j=i+1;j<nobj;j++) {
+                if(u[i]*u[j]==0.0) continue;
+                const double dx = r[3*i  ]-r[3*j  ];
+                const double dy = r[3*i+1]-r[3*j+1];
+                const double dz = r[3*i+2]-r[3*j+2];
+                V -= (u[i]*u[j])/sqrt( dx*dx + dy*dy + dz*dz );
+            }
+        return T+V;
     }
 
-    bool impact_test(unsigned &id,unsigned &jd) {
-        id = 0; jd = 0;
+    bool impact_test() const {
         for(unsigned i=0;i<nobj-1;i++) {
             for(unsigned j=i+1;j<nobj;j++) {
-                double r2 = R[i]+R[j];
+                const double r2 = R[i]+R[j];
                 if(r2<=0) continue;
-                double dist = vec_math::norm(vec_math::sub(get_position(i),get_position(j)));
-                if(dist<=r2) {
-                    id = i; jd = j;
+                const double dx = r[3*i  ]-r[3*j  ];
+                const double dy = r[3*i+1]-r[3*j+1];
+                const double dz = r[3*i+2]-r[3*j+2];
+                const double dist = dx*dx + dy*dy + dz*dz;
+                if(dist<=r2*r2) {
                     if(verbose) std::cout<<"# "<<name[i]<<" and "<<name[j]<<" impacted!\n";
                     return true;
                 }
-                if(mindist<0 or mindist>dist) mindist = dist;
             }
         }
         return false;
     }
 
-    bool e_test() const {
+    bool distance_test() const {
+        if(maxdist<=0.) return false;
         for(unsigned i=0;i<nobj;i++) {
-            if(maxe[i]>=1.-1e-5) continue;
-            auto orb = orbit(i,-1);
-            if(orb.e>maxe[i]) {
-                if(verbose) std::cout<<"# "<<name[i]<<" reached an eccentricity of "<<orb.e<<"!\n";
+            const double dist2 = r[3*i]*r[3*i] + r[3*i+1]*r[3*i+1] + r[3*i+2]*r[3*i+2];
+            if(dist2>maxdist*maxdist) {
+                if(verbose) std::cout<<"# "<<name[i]<<" reached maximum distance!\n";
                 return true;
             }
         }
         return false;
     }
 
-    bool is_sane() {
-        double md; unsigned id,jd;
-        if(maxdist>0) {
-            calc_dist(md,id);
-            if(md>maxdist) {
-                if(verbose) std::cout<<"# "<<name[id]<<" exceeded maximum distance!\n";
-                return false;
-            }
-        }
-        if(impact_test(id,jd)) return false;
-        if(e_test()) return false;
+    bool is_sane() const {
+        if(impact_test()) return false;
+        if(distance_test()) return false;
         return true;
     }
 
-    void evolve_self(double tgoal,double precision=1e-12) {
-        RKN670<double,NBody> rkn(nobj*3,precision);
-        rkn.integrate(*this,tgoal);
-        failed = rkn.failed;
+    int evolve_rkn(double tgoal,double tol=1e-12) {
+        RKN_Integrator<NBody> rk(neq,tol,true);
+        rk.integrate(*this,tgoal);
+        return rk.ifail;
     }
 
 };
