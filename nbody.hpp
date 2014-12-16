@@ -152,6 +152,25 @@ class NBody { public:
         return ret;
     }
 
+    double get_eccentricity(unsigned i,int j=-1) const {
+        double ub; std::vector<double> rb,vb;
+        if(j>-1) { ub = u[i]+u[j]; rb = get_position(j); vb = get_position(j); } 
+        else calc_bary(ub,rb,vb);
+        std::vector<double> r = get_position(i);
+        std::vector<double> v = get_velocity(i);
+        for(int k=0;k<3;k++) { r[k] -= rb[k]; v[k] -= vb[k]; }
+        std::vector<double> h(3);
+        h[0] = r[1]*v[2] - r[2]*v[1];
+        h[1] = r[2]*v[0] - r[0]*v[2];
+        h[2] = r[0]*v[1] - r[1]*v[0];
+        const double rm = sqrt(r[0]*r[0] + r[1]*r[1] + r[2]*r[2]);
+        const double v2 = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
+        const double h2 = h[0]*h[0] + h[1]*h[1] + h[2]*h[2];
+        const double alpha = (2.*ub - v2*rm)/(ub*rm);
+        if(fabs(alpha) > 1e-15) return sqrt(1.-(h2*alpha/ub));
+        else return 1.0;
+    }
+
     void calc_bary(double &ub,std::vector<double> &rb,std::vector<double> &vb) const {
         ub = 0; rb = std::vector<double>(3,0.0); vb = std::vector<double>(3,0.0);
         for(unsigned i=0;i<nobj;i++) {

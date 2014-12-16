@@ -28,6 +28,7 @@ cdef extern from "nbody.hpp":
         vector[double] get_position(int)
         vector[double] get_velocity(int)
         vector[double] get_state(int)
+        double get_eccentricity(int,int)
         int lookup(string)
         void calc_bary(double &,vector[double] &,vector[double] &)
         int evolve_rkn(double,double)
@@ -68,6 +69,10 @@ cdef class NBody:
         return np.array(self.thisptr.get_velocity(i))
     def get_state(self, int i):
         return np.array(self.thisptr.get_state(i))
+
+    def get_eccentricity(self, int i,j=None):
+        if j==None: return self.thisptr.get_eccentricity(i,-1)
+        else: return self.thisptr.get_eccentricity(i,j)
 
     # Lookup the index of an object given a name
     def lookup(self, string s):
