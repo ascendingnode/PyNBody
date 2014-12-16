@@ -24,6 +24,7 @@ cdef extern from "nbody.hpp":
         _NBody() except +
         unsigned add_object_state(string,double,double,vector[double])
         unsigned add_object(string,double,double,vector[double],vector[double])
+        void set_oblate(string,double,double,double,double)
         vector[double] get_position(int)
         vector[double] get_velocity(int)
         vector[double] get_state(int)
@@ -54,6 +55,11 @@ cdef class NBody:
     def add_object_state(self, name,double u0,double R0,vector[double] state):
         name = name.encode('UTF-8')
         return self.thisptr.add_object_state(name, u0,R0,state)
+
+    # Define one object to be oblate
+    def set_oblate(self, name,double J20,double J40,double ra0,double dec0):
+        name = name.encode('UTF-8')
+        self.thisptr.set_oblate(name,J20,J40,ra0,dec0)
 
     # Get object state
     def get_position(self, int i):
