@@ -8,10 +8,11 @@ class NBody { public:
 
     unsigned neq, nobj;
     double t, maxdist;
-    std::vector<double> r,v,a, u,R;
+    std::vector<double> r,v,a, u,R, emax_e;
     std::vector<std::string> name;
+    std::vector<int> emax_i,emax_j;
 
-    bool oblate,verbose;
+    bool oblate,verbose,echeck;
     unsigned iob;
     double J2,J4, ra,dec,et_pole;
     std::vector<double> Cx,Cy,Cz;
@@ -19,7 +20,7 @@ class NBody { public:
     NBody() {
         nobj = neq = 0;
         t = maxdist = 0.0;
-        verbose = oblate = false;
+        verbose = oblate = echeck = false;
     }
 
     unsigned add_object(const std::string &name0,double u0,double R0,const std::vector<double> &r0,const std::vector<double> &v0) {
@@ -55,6 +56,13 @@ class NBody { public:
         Cx[0]=-sr   ; Cx[1]= cr   ; Cx[2]=0.;
         Cy[0]=-cr*sd; Cy[1]=-sr*sd; Cy[2]=cd;
         Cz[0]= cr*cd; Cz[1]= sr*cd; Cz[2]=sd;
+    }
+
+    void add_emax(unsigned i,double e,int j=-1) {
+        emax_i.push_back(i); 
+        emax_e.push_back(e); 
+        emax_j.push_back(j);
+        echeck = true;
     }
 
     int lookup(const std::string &name0) const {
@@ -154,7 +162,7 @@ class NBody { public:
 
     double get_eccentricity(unsigned i,int j=-1) const {
         double ub; std::vector<double> rb,vb;
-        if(j>-1) { ub = u[i]+u[j]; rb = get_position(j); vb = get_position(j); } 
+        if(j>-1) { ub = u[i]+u[j]; rb = get_position(j); vb = get_velocity(j); } 
         else calc_bary(ub,rb,vb);
         std::vector<double> r = get_position(i);
         std::vector<double> v = get_velocity(i);
@@ -239,7 +247,6 @@ class NBody { public:
     }
 
     bool distance_test() const {
-        if(maxdist<=0.) return false;
         for(unsigned i=0;i<nobj;i++) {
             const double dist2 = r[3*i]*r[3*i] + r[3*i+1]*r[3*i+1] + r[3*i+2]*r[3*i+2];
             if(dist2>maxdist*maxdist) {
@@ -250,9 +257,20 @@ class NBody { public:
         return false;
     }
 
+    bool check_e() const {
+        for(unsigned i=0;i<emax_i.size();i++) {
+            if(get_eccentricity(emax_i[i],emax_j[i])>emax_e[i]) {
+                if(verbose) std::cout<<"# "<<name[emax_i[i]]<<" exceeded eccentricity of "<<emax_e[i]<<"!\n";
+                return true;
+            }
+        }
+        return false;
+    }
+
     bool is_sane() const {
         if(impact_test()) return false;
-        if(distance_test()) return false;
+        if(maxdist<=0. && distance_test()) return false;
+        if(echeck && check_e()) return false;
         return true;
     }
 

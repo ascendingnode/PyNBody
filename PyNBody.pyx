@@ -25,6 +25,7 @@ cdef extern from "nbody.hpp":
         unsigned add_object_state(string,double,double,vector[double])
         unsigned add_object(string,double,double,vector[double],vector[double])
         void set_oblate(string,double,double,double,double)
+        void add_emax(int,double,int)
         vector[double] get_position(int)
         vector[double] get_velocity(int)
         vector[double] get_state(int)
@@ -61,6 +62,10 @@ cdef class NBody:
     def set_oblate(self, name,double J20,double J40,double ra0,double dec0):
         name = name.encode('UTF-8')
         self.thisptr.set_oblate(name,J20,J40,ra0,dec0)
+
+    def add_emax(self, int i,double e,j=None):
+        if j==None: self.thisptr.add_emax(i,e,-1)
+        else: self.thisptr.add_emax(i,e,j)
 
     # Get object state
     def get_position(self, int i):
