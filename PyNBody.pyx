@@ -136,7 +136,9 @@ cdef class NBody:
 
     # Evolve system
     def evolve(self, double tgoal, precision=None):
-        if precision==None: 
+        if tgoal==self.t:
+            return 0
+        elif precision==None: 
             return self.thisptr.evolve_rkn(tgoal,1e-12)
         else:
             return self.thisptr.evolve_rkn(tgoal,float(precision))
