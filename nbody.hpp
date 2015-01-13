@@ -269,7 +269,7 @@ class NBody { public:
 
     bool is_sane() const {
         if(impact_test()) return false;
-        if(maxdist<=0. && distance_test()) return false;
+        if(maxdist>=0. && distance_test()) return false;
         if(echeck && check_e()) return false;
         return true;
     }
