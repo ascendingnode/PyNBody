@@ -18,7 +18,7 @@ cdef extern from "nbody.hpp":
     cdef cppclass _NBody "NBody":
         double t , maxdist
         unsigned nobj
-        vector[double] u#,maxe
+        vector[double] u,R
         vector[string] name
         bool verbose
         _NBody() except +
@@ -49,6 +49,23 @@ cdef class NBody:
         self.thisptr = new _NBody()
     def __del__(self):
         del self.thisptr
+
+    # Make the object picklable
+    # ***** INCOMPLETE ********
+    def __reduce__(self):
+        d = { 't':self.t, 'verbose':self.verbose, 'maxdist':self.maxdist }
+        obj = []
+        for i in range(self.nobj):
+            o = { 'R':float(self.thisptr.R[i]), 'u':float(self.thisptr.u[i]) }
+            o['name'] = self.name(i)
+            o['state'] = np.array(self.thisptr.get_state(i))
+            obj.append(o)
+        d['obj'] = obj
+        return (NBody, (), d)
+    def __setstate__(self, d):
+        self.t,self.verbose,self.maxdist = d['t'],d['verbose'],d['maxdist']
+        for obj in d['obj']:
+            self.add_object_state(obj['name'],obj['u'],obj['R'],obj['state'])
 
     # Add an object to the system
     def add_object(self, name,double u0,double R0,vector[double] r0,vector[double] v0):
