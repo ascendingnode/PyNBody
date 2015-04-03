@@ -18,7 +18,8 @@ cdef extern from "nbody.hpp":
     cdef cppclass _NBody "NBody":
         double t , maxdist
         unsigned nobj
-        vector[double] u,R
+        vector[double] u,R, emax_e
+        vector[int] emax_i,emax_j
         vector[string] name
         bool verbose
         _NBody() except +
@@ -60,12 +61,17 @@ cdef class NBody:
             o['name'] = self.name(i)
             o['state'] = np.array(self.thisptr.get_state(i))
             obj.append(o)
+        d['emax'] = []
+        for i in range(len(self.thisptr.emax_i)):
+            d['emax'].append( [self.thisptr.emax_i,self.thisptr.emax_e,self.thisptr.emax_j] )
         d['obj'] = obj
         return (NBody, (), d)
     def __setstate__(self, d):
         self.t,self.verbose,self.maxdist = d['t'],d['verbose'],d['maxdist']
         for obj in d['obj']:
             self.add_object_state(obj['name'],obj['u'],obj['R'],obj['state'])
+        for iej in d['emax']:
+            self.add_emax(*iej)
 
     # Add an object to the system
     def add_object(self, name,double u0,double R0,vector[double] r0,vector[double] v0):
