@@ -2,6 +2,7 @@ from __future__ import print_function
 from PyNBody import NBody
 import SimSpice as spice
 import numpy as np
+import os
 
 # Create the Uranus system from SPICE
 def make_uranus(et):
@@ -25,6 +26,7 @@ def make_uranus(et):
     
     nb = NBody()
     nb.t = et
+    nb.maxdist = np.inf
 
     nb.add_object_state("Uranus",gm_ura,R_ura,np.zeros(6))
     nb.set_oblate("Uranus",J702,J704,ZACPL7,ZDEPL7)
@@ -81,8 +83,11 @@ if __name__=='__main__':
 
     # Update to reflect where you keep these kernels
     kdir = '../../kernels/'
-    lsk = kdir+"naif0010.tls"
+    lsk = kdir+"naif0011.tls"
     spk = kdir+"ura111.bsp"
+    
+    if not os.path.isfile(lsk): print('# Need '+lsk)
+    if not os.path.isfile(spk): print('# Need '+spk)
 
     spice.furnsh(lsk)
     spice.furnsh(spk)
