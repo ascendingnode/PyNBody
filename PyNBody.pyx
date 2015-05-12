@@ -48,8 +48,11 @@ cdef class NBody:
     cdef _NBody *thisptr
     def __cinit__(self):
         self.thisptr = new _NBody()
-    def __del__(self):
-        del self.thisptr
+        if self.thisptr is NULL:
+            raise MemoryError()
+    def __dealloc__(self):
+        if self.thisptr is not NULL:
+            del self.thisptr
 
     # Make the object picklable
     # ***** INCOMPLETE ********
