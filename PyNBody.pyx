@@ -78,15 +78,18 @@ cdef class NBody:
 
     # Add an object to the system
     def add_object(self, name,double u0,double R0,vector[double] r0,vector[double] v0):
-        name = name.encode('UTF-8')
+        try: name = name.encode('UTF-8')
+        except: pass
         return self.thisptr.add_object(name, u0,R0,r0,v0)
     def add_object_state(self, name,double u0,double R0,vector[double] state):
-        name = name.encode('UTF-8')
+        try: name = name.encode('UTF-8')
+        except: pass
         return self.thisptr.add_object_state(name, u0,R0,state)
 
     # Define one object to be oblate
     def set_oblate(self, name,double J20,double J40,double ra0,double dec0):
-        name = name.encode('UTF-8')
+        try: name = name.encode('UTF-8')
+        except: pass
         self.thisptr.set_oblate(name,J20,J40,ra0,dec0)
 
     def add_emax(self, int i,double e,j=None):
