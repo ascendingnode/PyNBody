@@ -110,6 +110,8 @@ cdef class NBody:
 
     # Lookup the index of an object given a name
     def lookup(self, string s):
+        try: s = s.encode('UTF-8')
+        except: pass
         return self.thisptr.lookup(s)
 
     # Calculate the barycenter of an object
