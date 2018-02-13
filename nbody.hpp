@@ -213,6 +213,16 @@ class NBody { public:
         return L;
     }
 
+    std::vector<double> angular_momentum() const {
+        std::vector<double> L(3,0.0);
+        for(unsigned i=0;i<nobj;i++) {
+            L[0] += u[i]*(r[3*i+1]*v[3*i+2] - r[3*i+2]*v[3*i+1]);
+            L[1] += u[i]*(r[3*i+2]*v[3*i+0] - r[3*i+0]*v[3*i+2]);
+            L[2] += u[i]*(r[3*i+0]*v[3*i+1] - r[3*i+1]*v[3*i+0]);
+        }
+        return L;
+    }
+
     double hamiltonian() const {
         double T = 0.0, V = 0.0;
         for(unsigned i=0;i<nobj;i++) 

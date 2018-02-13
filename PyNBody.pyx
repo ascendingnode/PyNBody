@@ -36,6 +36,7 @@ cdef extern from "nbody.hpp":
         int evolve_rkn(double,double)
         void move2bary()
         vector[double] momentum()
+        vector[double] angular_momentum()
         double hamiltonian()
         bool is_sane()
 
@@ -180,6 +181,9 @@ cdef class NBody:
 
     def momentum(self):
         return np.array(self.thisptr.momentum())
+
+    def angular_momentum(self):
+        return np.array(self.thisptr.angular_momentum())
 
     def hamiltonian(self):
         return float(self.thisptr.hamiltonian())
