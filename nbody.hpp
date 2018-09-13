@@ -50,8 +50,12 @@ class NBody { public:
         iob = lookup(name0);
         J2 = J20; J4 = J40; ra = ra0; dec = dec0;
         const double d2r = M_PI/180.;
-        double sr,cr; sincos(ra *d2r,&sr,&cr);
-        double sd,cd; sincos(dec*d2r,&sd,&cd);
+        //double sr,cr; sincos(ra *d2r,&sr,&cr);
+        double sr = sin(ra *d2r);
+        double cr = cos(ra *d2r);
+        //double sd,cd; sincos(dec*d2r,&sd,&cd);
+        double sd = sin(dec*d2r);
+        double cd = cos(dec*d2r);
         Cx.resize(3); Cy.resize(3); Cz.resize(3);
         Cx[0]=-sr   ; Cx[1]= cr   ; Cx[2]=0.;
         Cy[0]=-cr*sd; Cy[1]=-sr*sd; Cy[2]=cd;
