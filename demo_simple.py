@@ -18,6 +18,7 @@ def run_test(e):
     nb1.verbose = True
     nb1.add_object("Big"  ,0.9,0.1,[0,0,0],[0,0,0])
     nb1.add_object("Small",0.1,0.1,[rp,0,0],[0,vp,0])
+    nb1.maxdist = np.inf
     nb1.move2bary()
 
     # Use .copy() to get a deep copy of the object
